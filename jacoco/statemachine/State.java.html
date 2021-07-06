@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>State.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">conversations-engine</a> &gt; <a href="index.source.html" class="el_package">statemachine</a> &gt; <span class="el_source">State.java</span></div><h1>State.java</h1><pre class="source lang-java linenums">package statemachine;
+
+import java.util.ArrayList;
+import java.util.List;
+
+/**
+ * Represents a State of a state machine
+ * 
+ * @author Marcel Engelmann
+ *
+ */
+class State {
+	private List&lt;Transition&gt; transitions;
+	private String name;
+
+	/**
+	 * Create a new State object
+	 * 
+	 * @param name the name of the state
+	 */
+<span class="fc" id="L21">	State(String name) {</span>
+<span class="fc" id="L22">		this.name = name;</span>
+<span class="fc" id="L23">		this.transitions = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L24">	}</span>
+
+	/**
+	 * Returns the name of the state
+	 * 
+	 * @return the name of the state
+	 */
+	String getName() {
+<span class="fc" id="L32">		return this.name;</span>
+	}
+
+	/**
+	 * Adds a new transition to the State
+	 * 
+	 * @param transition the transition to add
+	 */
+	void addTransition(Transition transition) {
+<span class="fc" id="L41">		this.transitions.add(transition);</span>
+<span class="fc" id="L42">	}</span>
+
+	/**
+	 * Returns the target state of the transition that has the @param trigger
+	 * 
+	 * @param trigger the trigger for the next transition
+	 * @return the target state of the next transition or null if the transition
+	 *         does not exist
+	 */
+	State getNextState(String trigger) {
+<span class="fc bfc" id="L52" title="All 2 branches covered.">		for (Transition transition : transitions) {</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">			if (transition.getTrigger().equals(trigger)) {</span>
+<span class="fc" id="L54">				return transition.getTarget();</span>
+			}
+<span class="fc" id="L56">		}</span>
+<span class="fc" id="L57">		return null;</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

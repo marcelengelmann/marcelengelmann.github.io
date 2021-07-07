@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GenerateSkillStateMachine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">conversations-engine</a> &gt; <a href="index.source.html" class="el_package">statemachine</a> &gt; <span class="el_source">GenerateSkillStateMachine.java</span></div><h1>GenerateSkillStateMachine.java</h1><pre class="source lang-java linenums">package statemachine;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import org.everit.json.schema.Schema;
+import org.everit.json.schema.ValidationException;
+import org.everit.json.schema.loader.SchemaLoader;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+import org.json.JSONTokener;
+
+import interfaces.INLPComponent;
+import interfaces.ISkill;
+
+/**
+ * Utility class for generating {@link SkillStateMachine SkillStateMachines}
+ * 
+ * @author Marcel Engelmann
+ *
+ */
+class GenerateSkillStateMachine {
+
+<span class="fc" id="L25">	private GenerateSkillStateMachine() throws IllegalStateException {</span>
+<span class="fc" id="L26">		throw new IllegalStateException(&quot;Utility class&quot;);</span>
+	}
+
+	/**
+	 * Generate a new skill state machine from a JSON file
+	 * 
+	 * @param skill                 new skill to generate a state machine for
+	 * @param jsonSkillStateMachine the JSON-String for the skill's state machine.
+	 *                              For the correct syntax check out the &lt;a href=
+	 *                              &quot;file:../../resources/SkillStateMachine_Schema.json&quot;&gt;Schema.json&lt;/a&gt;
+	 *                              file
+	 * @param nlpComponent          the used NLP-Component to add the skill's used
+	 *                              intents and entities
+	 * @return a new SkillStateMachine object
+	 */
+	static SkillStateMachine fromJson(ISkill skill, String jsonSkillStateMachine, INLPComponent nlpComponent) {
+		JSONObject skillStateMachine;
+		try {
+<span class="fc" id="L44">			skillStateMachine = new JSONObject(new JSONTokener(jsonSkillStateMachine));</span>
+<span class="fc" id="L45">		} catch (JSONException ex) {</span>
+<span class="fc" id="L46">			Logging.error(&quot;Invalid JSON-String: {}&quot;, ex.getLocalizedMessage());</span>
+<span class="fc" id="L47">			return null;</span>
+<span class="fc" id="L48">		}</span>
+
+		try {
+<span class="fc" id="L51">			validJsonSkillStateMachine(skillStateMachine);</span>
+<span class="fc" id="L52">		} catch (ValidationException ex) {</span>
+<span class="fc" id="L53">			Logging.error(&quot;Invalid SkillStateMachine JSON format: {}&quot;, buildExceptionString(ex));</span>
+<span class="fc" id="L54">			return null;</span>
+<span class="fc" id="L55">		}</span>
+
+<span class="fc" id="L57">		List&lt;State&gt; states = getStates(skillStateMachine);</span>
+<span class="fc" id="L58">		boolean hasErrors = false;</span>
+<span class="fc" id="L59">		String startStateName = skillStateMachine.getString(&quot;startAt&quot;);</span>
+<span class="fc" id="L60">		String endStateName = skillStateMachine.getString(&quot;endAt&quot;);</span>
+<span class="fc" id="L61">		String name = skillStateMachine.getString(&quot;name&quot;);</span>
+
+<span class="fc" id="L63">		State startState = getStateByName(startStateName, states);</span>
+<span class="fc" id="L64">		State endState = getStateByName(endStateName, states);</span>
+
+<span class="fc bfc" id="L66" title="All 2 branches covered.">		if (!successfullyAddedTransitions(skillStateMachine, states)) {</span>
+<span class="fc" id="L67">			hasErrors = true;</span>
+		}
+<span class="fc bfc" id="L69" title="All 2 branches covered.">		if (startState == null) {</span>
+<span class="fc" id="L70">			Logging.error(&quot;Could not find the defined startAt state {} in the list of all defined states&quot;,</span>
+					startStateName);
+<span class="fc" id="L72">			hasErrors = true;</span>
+		}
+<span class="fc bfc" id="L74" title="All 2 branches covered.">		if (endState == null) {</span>
+<span class="fc" id="L75">			Logging.error(&quot;Could not find the defined endAt state {} in the list of all defined states&quot;, endStateName);</span>
+<span class="fc" id="L76">			hasErrors = true;</span>
+		}
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">		if (name.isBlank()) {</span>
+<span class="fc" id="L80">			Logging.error(&quot;The name of the skill is empty&quot;);</span>
+<span class="fc" id="L81">			hasErrors = true;</span>
+		}
+
+<span class="fc bfc" id="L84" title="All 2 branches covered.">		if (hasErrors) {</span>
+<span class="fc" id="L85">			return null;</span>
+		}
+
+<span class="fc" id="L88">		List&lt;String&gt; usedEntities = getUsedEntities(skillStateMachine);</span>
+<span class="fc" id="L89">		List&lt;String&gt; usedIntents = getUsedIntents(skillStateMachine);</span>
+<span class="fc" id="L90">		nlpComponent.addUsedEntities(usedEntities);</span>
+<span class="fc" id="L91">		nlpComponent.addUsedIntents(usedIntents);</span>
+
+<span class="fc" id="L93">		return new SkillStateMachine(name, startState, endState, skill);</span>
+	}
+
+	/**
+	 * Get the skill's used entities from the skill's {@link JSONObject}
+	 * 
+	 * @param skillStateMachine the {@link JSONObject} of the skill's new state
+	 *                          machine
+	 * @return a list of entities
+	 */
+	private static List&lt;String&gt; getUsedEntities(JSONObject skillStateMachine) {
+<span class="fc" id="L104">		JSONArray entitiesArray = skillStateMachine.getJSONArray(&quot;usedEntities&quot;);</span>
+<span class="fc" id="L105">		List&lt;String&gt; usedEntities = new ArrayList&lt;&gt;(entitiesArray.length());</span>
+<span class="fc bfc" id="L106" title="All 2 branches covered.">		for (int i = 0; i &lt; entitiesArray.length(); i++) {</span>
+<span class="fc" id="L107">			usedEntities.add(entitiesArray.getString(i));</span>
+		}
+<span class="fc" id="L109">		return usedEntities;</span>
+	}
+
+	/**
+	 * Get the skill's used intents from the skill's {@link JSONObject}
+	 * 
+	 * @param skillStateMachine the {@link JSONObject} of the skill's new state
+	 *                          machine
+	 * @return a list of intents
+	 */
+	private static List&lt;String&gt; getUsedIntents(JSONObject skillStateMachine) {
+<span class="fc" id="L120">		JSONArray intentsArray = skillStateMachine.getJSONArray(&quot;usedIntents&quot;);</span>
+<span class="fc" id="L121">		List&lt;String&gt; usedIntents = new ArrayList&lt;&gt;(intentsArray.length());</span>
+<span class="fc bfc" id="L122" title="All 2 branches covered.">		for (int i = 0; i &lt; intentsArray.length(); i++) {</span>
+<span class="fc" id="L123">			usedIntents.add(intentsArray.getString(i));</span>
+		}
+<span class="fc" id="L125">		return usedIntents;</span>
+	}
+
+	/**
+	 * Tries to add all defined transitions to the correct states of the skill's new
+	 * state machine
+	 * 
+	 * @param skillStateMachine the {@link JSONObject} of the skill's new state
+	 *                          machine
+	 * @param states            the list of {@link State States} found in the
+	 *                          skill's {@link JSONObject}
+	 * @return true if all transitions were added successfully
+	 */
+	private static boolean successfullyAddedTransitions(JSONObject skillStateMachine, List&lt;State&gt; states) {
+<span class="fc" id="L139">		int index = 0;</span>
+<span class="fc" id="L140">		boolean noErrors = true;</span>
+<span class="fc bfc" id="L141" title="All 2 branches covered.">		for (Object t : skillStateMachine.getJSONArray(&quot;transitions&quot;)) {</span>
+<span class="fc" id="L142">			JSONObject transition = (JSONObject) t;</span>
+<span class="fc" id="L143">			State source = getStateByName(transition.getString(&quot;source&quot;), states);</span>
+<span class="fc bfc" id="L144" title="All 2 branches covered.">			if (source == null) {</span>
+<span class="fc" id="L145">				Logging.error(&quot;Cannot find the source state {} in transition #{}&quot;, transition.getString(&quot;source&quot;),</span>
+<span class="fc" id="L146">						index);</span>
+<span class="fc" id="L147">				noErrors = false;</span>
+			}
+<span class="fc" id="L149">			State target = getStateByName(transition.getString(&quot;target&quot;), states);</span>
+<span class="fc bfc" id="L150" title="All 2 branches covered.">			if (target == null) {</span>
+<span class="fc" id="L151">				Logging.error(&quot;Cannot find the target state {} in transition #{}&quot;, transition.getString(&quot;target&quot;),</span>
+<span class="fc" id="L152">						index);</span>
+<span class="fc" id="L153">				noErrors = false;</span>
+			}
+<span class="fc" id="L155">			String trigger = transition.getString(&quot;trigger&quot;);</span>
+<span class="fc" id="L156">			index++;</span>
+<span class="fc bfc" id="L157" title="All 4 branches covered.">			if (source != null &amp;&amp; target != null) {</span>
+<span class="fc" id="L158">				source.addTransition(new Transition(target, trigger));</span>
+			}
+<span class="fc" id="L160">		}</span>
+<span class="fc" id="L161">		return noErrors;</span>
+	}
+
+	/**
+	 * Returns the list of {@link State States} found in the skill's
+	 * {@link JSONObject}
+	 * 
+	 * @param skillStateMachine the {@link JSONObject} of the skill's new state
+	 *                          machine
+	 * @return the list of {@link State States} found in the skill's
+	 *         {@link JSONObject}
+	 */
+	private static List&lt;State&gt; getStates(JSONObject skillStateMachine) {
+<span class="fc" id="L174">		List&lt;State&gt; states = new ArrayList&lt;&gt;();</span>
+
+<span class="fc bfc" id="L176" title="All 2 branches covered.">		for (Object state : skillStateMachine.getJSONArray(&quot;states&quot;)) {</span>
+<span class="fc" id="L177">			states.add(new State(((JSONObject) state).getString(&quot;name&quot;)));</span>
+<span class="fc" id="L178">		}</span>
+
+<span class="fc" id="L180">		return states;</span>
+
+	}
+
+	/**
+	 * Finds a {@link State} in a given list by a given name
+	 * 
+	 * @param name   the name of the state to be found
+	 * @param states the list of {@link State States} to search for the wanted
+	 *               {@link State}
+	 * @return the {@link State} corresponding to the given name or null if the
+	 *         {@link State} was not found
+	 */
+	private static State getStateByName(String name, Iterable&lt;State&gt; states) {
+<span class="fc bfc" id="L194" title="All 2 branches covered.">		for (State state : states) {</span>
+<span class="fc bfc" id="L195" title="All 2 branches covered.">			if (state.getName().equals(name)) {</span>
+<span class="fc" id="L196">				return state;</span>
+			}
+<span class="fc" id="L198">		}</span>
+<span class="fc" id="L199">		return null;</span>
+	}
+
+	/**
+	 * Validates the {@link JSONObject} of the skill's new state machine with this
+	 * &lt;a href= &quot;file:../../resources/SkillStateMachine_Schema.json&quot;&gt;JSON-Schema&lt;/a&gt;
+	 * 
+	 * @param skillStateMachine the {@link JSONObject} of the skill's new state
+	 *                          machine
+	 * @throws ValidationException if the JSON-Object is invalid
+	 */
+	private static void validJsonSkillStateMachine(JSONObject skillStateMachine) throws ValidationException {
+
+		// load JSON file to use as validation schema
+<span class="fc" id="L213">		ClassLoader classLoader = Thread.currentThread().getContextClassLoader();</span>
+<span class="fc" id="L214">		JSONObject jsonSchema = new JSONObject(</span>
+<span class="fc" id="L215">				new JSONTokener(classLoader.getResourceAsStream(&quot;SkillStateMachine_Schema.json&quot;)));</span>
+
+<span class="fc" id="L217">		Schema schema = SchemaLoader.load(jsonSchema);</span>
+<span class="fc" id="L218">		schema.validate(skillStateMachine);</span>
+
+<span class="fc" id="L220">	}</span>
+
+	/**
+	 * Creates a String with the exception message of all nested
+	 * {@link ValidationException ValidationExceptions}
+	 * 
+	 * @param validationException the occurred exception to build a message from
+	 * @return a String with the exception message of all nested
+	 *         {@link ValidationException ValidationExceptions}
+	 */
+	private static String buildExceptionString(ValidationException validationException) {
+<span class="fc" id="L231">		StringBuilder errorMessage = new StringBuilder();</span>
+<span class="fc bfc" id="L232" title="All 2 branches covered.">		for (ValidationException ex : validationException.getCausingExceptions()) {</span>
+<span class="fc" id="L233">			errorMessage.append(buildExceptionString(ex));</span>
+<span class="fc" id="L234">		}</span>
+<span class="fc bfc" id="L235" title="All 2 branches covered.">		if (validationException.getCausingExceptions().isEmpty()) {</span>
+<span class="fc" id="L236">			errorMessage.append('\n');</span>
+<span class="fc" id="L237">			errorMessage.append(validationException.getMessage());</span>
+		}
+<span class="fc" id="L239">		return errorMessage.toString();</span>
+	}
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

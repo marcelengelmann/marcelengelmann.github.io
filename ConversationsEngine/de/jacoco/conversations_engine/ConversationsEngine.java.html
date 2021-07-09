@@ -1,0 +1,737 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>ConversationsEngine.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">conversations-engine</a> &gt; <a href="index.source.html" class="el_package">conversations_engine</a> &gt; <span class="el_source">ConversationsEngine.java</span></div><h1>ConversationsEngine.java</h1><pre class="source lang-java linenums">package conversations_engine;
+
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Timer;
+import java.util.TimerTask;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
+
+import org.json.JSONObject;
+
+import interfaces.INLPAnswer;
+import interfaces.INLPComponent;
+import interfaces.ISkill;
+import interfaces.ISkillAnswer;
+
+/**
+ * ConversationsEngine is a framework that is supposed to be used as a dialog
+ * management system. It is designed to simplify the creation of chatbots by
+ * combining {@link ISkill skills} and a single {@link INLPComponent
+ * NLP-Component} into an all in one system.&lt;br&gt;
+ * &lt;br&gt;
+ * The system is based on a finite state machine to create an accessible testing
+ * environment.
+ * 
+ * @author Marcel Engelmann
+ *
+ */
+public class ConversationsEngine {
+
+	private static final int DEFAULTTIMEOUTVALUE = 300;
+	private static final String EMPTYCONTEXTOBJECT = &quot;{}&quot;;
+
+	private State currentState;
+	private SkillStateMachine currentSkillStateMachine;
+	private SkillStateMachine lastUsedSkillStateMachine;
+	private PendingQuestions pendingSkillQuestions;
+	private JSONObject contextObject;
+	private Timer timer;
+	private String lastIntent;
+	private INLPComponent nlpComponent;
+	private List&lt;String&gt; possibleSkillsForChooseSkillQuestion;
+	private List&lt;SkillStateMachine&gt; allSkillStateMachines;
+	private Deque&lt;String&gt; pendingIntents;
+	private boolean wasLastQuestionChooseSkill;
+	private boolean wasLastQuestionSkillQuestion;
+	private boolean wasLastQuestionAbortQuestion;
+	private boolean wasLastQuestionReturnToPreviousSkill;
+	private boolean closed;
+	private int timeoutInSeconds;
+
+	/**
+	 * Creates a new {@link ConversationsEngine} object
+	 * 
+	 * @param nlpComponent      the NLPComponent that handles the user input
+	 * @param timeoutInSeconds  the number of seconds after which the
+	 *                          {@link ConversationsEngine} will transition into the
+	 *                          sleepState. The timer refreshes after each
+	 *                          interaction.
+	 * @param jsonContextObject the contextObject as JSON-String to start the
+	 *                          {@link ConversationsEngine} with
+	 * @throws IllegalArgumentException if the {@link INLPComponent} is null or the
+	 *                                  timeout value is less than 1
+	 */
+	public ConversationsEngine(INLPComponent nlpComponent, int timeoutInSeconds, String jsonContextObject)
+<span class="fc" id="L73">			throws IllegalArgumentException {</span>
+<span class="fc bfc" id="L74" title="All 2 branches covered.">		if (nlpComponent == null) {</span>
+<span class="fc" id="L75">			Logging.error(&quot;INLPComponent is null&quot;);</span>
+<span class="fc" id="L76">			throw new IllegalArgumentException(&quot;INLPComponent is null&quot;);</span>
+		}
+
+<span class="fc bfc" id="L79" title="All 2 branches covered.">		if (timeoutInSeconds &lt;= 0) {</span>
+<span class="fc" id="L80">			Logging.error(&quot;Timeout value must be greater than 0&quot;);</span>
+<span class="fc" id="L81">			throw new IllegalArgumentException(&quot;Timeout value must be greater than 0&quot;);</span>
+		}
+<span class="fc" id="L83">		State defaultState = new State(&quot;defaultState&quot;);</span>
+<span class="fc" id="L84">		State sleepState = new State(&quot;sleepState&quot;);</span>
+<span class="fc" id="L85">		defaultState.addTransition(new Transition(sleepState, &quot;SLEEP&quot;));</span>
+<span class="fc" id="L86">		sleepState.addTransition(new Transition(defaultState, &quot;WAKEUP&quot;));</span>
+<span class="fc" id="L87">		this.currentState = defaultState;</span>
+<span class="fc" id="L88">		this.nlpComponent = nlpComponent;</span>
+<span class="fc" id="L89">		this.contextObject = new JSONObject(jsonContextObject);</span>
+<span class="fc" id="L90">		this.allSkillStateMachines = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L91">		this.possibleSkillsForChooseSkillQuestion = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L92">		this.pendingSkillQuestions = new PendingQuestions();</span>
+<span class="fc" id="L93">		this.pendingIntents = new ArrayDeque&lt;&gt;();</span>
+<span class="fc" id="L94">		this.lastIntent = &quot;&quot;;</span>
+<span class="fc" id="L95">		this.wasLastQuestionChooseSkill = false;</span>
+<span class="fc" id="L96">		this.wasLastQuestionSkillQuestion = false;</span>
+<span class="fc" id="L97">		this.wasLastQuestionAbortQuestion = false;</span>
+<span class="fc" id="L98">		this.wasLastQuestionReturnToPreviousSkill = false;</span>
+<span class="fc" id="L99">		this.closed = false;</span>
+<span class="fc" id="L100">		this.timeoutInSeconds = timeoutInSeconds;</span>
+<span class="fc" id="L101">		I18n.setLanguage(new Locale(&quot;de&quot;, &quot;DE&quot;));</span>
+		// the list of intents the ConversationsEngine uses itself (as trigger words)
+<span class="fc" id="L103">		List&lt;String&gt; triggerIntents = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L104">		triggerIntents.add(&quot;abort&quot;);</span>
+<span class="fc" id="L105">		triggerIntents.add(&quot;last&quot;);</span>
+<span class="fc" id="L106">		triggerIntents.add(&quot;all&quot;);</span>
+<span class="fc" id="L107">		triggerIntents.add(&quot;yes&quot;);</span>
+<span class="fc" id="L108">		triggerIntents.add(&quot;no&quot;);</span>
+<span class="fc" id="L109">		this.nlpComponent.addUsedIntents(triggerIntents);</span>
+<span class="fc" id="L110">		this.timer = new Timer();</span>
+<span class="fc" id="L111">		scheduleNewTimeoutTask();</span>
+<span class="fc" id="L112">	}</span>
+
+	/**
+	 * Creates a new {@link ConversationsEngine} object with a default timeout of
+	 * 300 seconds and an empty context object
+	 * 
+	 * @param nlpComponent the NLPComponent that handles the user input
+	 */
+	public ConversationsEngine(INLPComponent nlpComponent) {
+<span class="fc" id="L121">		this(nlpComponent, DEFAULTTIMEOUTVALUE, EMPTYCONTEXTOBJECT);</span>
+<span class="fc" id="L122">	}</span>
+
+	/**
+	 * Creates a new {@link ConversationsEngine} object with an empty context object
+	 * 
+	 * @param nlpComponent     the NLPComponent that handles the user input
+	 * @param timeoutInSeconds the number of seconds after which the
+	 *                         {@link ConversationsEngine} will transition into the
+	 *                         sleepState. The timer refreshes after each
+	 *                         interaction.
+	 */
+	public ConversationsEngine(INLPComponent nlpComponent, int timeoutInSeconds) {
+<span class="fc" id="L134">		this(nlpComponent, timeoutInSeconds, EMPTYCONTEXTOBJECT);</span>
+<span class="fc" id="L135">	}</span>
+
+	/**
+	 * Creates a new {@link ConversationsEngine} object with a default timeout of
+	 * 300 seconds
+	 * 
+	 * @param nlpComponent      the NLPComponent that handles the user input
+	 * @param jsonContextObject the contextObject as JSON-String to start the
+	 *                          {@link ConversationsEngine} with
+	 */
+	public ConversationsEngine(INLPComponent nlpComponent, String jsonContextObject) {
+<span class="fc" id="L146">		this(nlpComponent, DEFAULTTIMEOUTVALUE, jsonContextObject);</span>
+<span class="fc" id="L147">	}</span>
+
+	/**
+	 * Returns the state machine's current state
+	 * 
+	 * @return the state machine's current state
+	 */
+	public String getState() {
+<span class="fc bfc" id="L155" title="All 2 branches covered.">		if (this.closed) {</span>
+<span class="fc" id="L156">			logIllegalAccess();</span>
+<span class="fc" id="L157">			return &quot;&quot;;</span>
+		}
+<span class="pc bpc" id="L159" title="1 of 4 branches missed.">		if (this.currentSkillStateMachine != null &amp;&amp; !&quot;sleepState&quot;.equalsIgnoreCase(this.currentState.getName()))</span>
+<span class="fc" id="L160">			return this.currentSkillStateMachine.getCurrentState().getName();</span>
+<span class="fc" id="L161">		return this.currentState.getName();</span>
+	}
+
+	/**
+	 * Add a new Skill to the {@link ConversationsEngine}
+	 * 
+	 * @param skill            the skill to add to the {@link ConversationsEngine}
+	 * @param jsonStateMachine the skill's state machine in JSON-Format. For the
+	 *                         JSON-Schema please check out the &lt;a href=
+	 *                         &quot;file:../../resources/SkillStateMachine_Schema.json&quot;&gt;Schema.json&lt;/a&gt;
+	 *                         file
+	 */
+	public void addSkill(ISkill skill, String jsonStateMachine) {
+<span class="fc bfc" id="L174" title="All 2 branches covered.">		if (this.closed) {</span>
+<span class="fc" id="L175">			logIllegalAccess();</span>
+<span class="fc" id="L176">			return;</span>
+		}
+<span class="fc bfc" id="L178" title="All 2 branches covered.">		if (skill == null) {</span>
+<span class="fc" id="L179">			Logging.error(&quot;The skill to add to the ConversationsEngine is null&quot;);</span>
+<span class="fc" id="L180">			return;</span>
+		}
+
+<span class="fc bfc" id="L183" title="All 2 branches covered.">		if (jsonStateMachine.isBlank()) {</span>
+<span class="fc" id="L184">			Logging.error(&quot;The JSON-String for the skill to add to the ConversationsEngine is blank&quot;, skill);</span>
+<span class="fc" id="L185">			return;</span>
+		}
+<span class="fc" id="L187">		SkillStateMachine newSkillStateMachine = GenerateSkillStateMachine.fromJson(skill, jsonStateMachine,</span>
+				nlpComponent);
+<span class="fc bfc" id="L189" title="All 2 branches covered.">		if (newSkillStateMachine == null) {</span>
+<span class="fc" id="L190">			Logging.error(&quot;Could not add the skill from the jsonString {}&quot;, jsonStateMachine);</span>
+<span class="fc" id="L191">			return;</span>
+		}
+
+<span class="fc bfc" id="L194" title="All 2 branches covered.">		if (allSkillStateMachines.stream().anyMatch(</span>
+<span class="fc" id="L195">				skillStateMachine -&gt; skillStateMachine.getName().equalsIgnoreCase(newSkillStateMachine.getName()))) {</span>
+<span class="fc" id="L196">			Logging.error(&quot;The skill {} already exists&quot;, newSkillStateMachine.getName());</span>
+<span class="fc" id="L197">			return;</span>
+		}
+
+<span class="fc" id="L200">		allSkillStateMachines.add(newSkillStateMachine);</span>
+<span class="fc" id="L201">	}</span>
+
+	/**
+	 * Shuts this ConversationsEngine object down and returns the current context
+	 * object to the given operation
+	 * 
+	 * @param operation the operation to call, with the context object passed as
+	 *                  parameter, after shutting down.
+	 */
+	public void shutdown(Consumer&lt;StringBuffer&gt; operation) {
+<span class="fc bfc" id="L211" title="All 2 branches covered.">		if (this.closed) {</span>
+<span class="fc" id="L212">			logIllegalAccess();</span>
+<span class="fc" id="L213">			return;</span>
+		}
+<span class="fc" id="L215">		Logging.debug(&quot;Shutting down the ConversationsEngine {}&quot;, this);</span>
+<span class="fc" id="L216">		this.timer.cancel();</span>
+<span class="fc" id="L217">		this.closed = true;</span>
+<span class="fc bfc" id="L218" title="All 2 branches covered.">		if (operation == null) {</span>
+<span class="fc" id="L219">			Logging.warn(&quot;The consumer passed to the shutdown function was null&quot;);</span>
+<span class="fc" id="L220">			return;</span>
+		}
+<span class="fc" id="L222">		StringBuffer buffer = new StringBuffer();</span>
+<span class="fc" id="L223">		buffer.append(this.contextObject);</span>
+<span class="fc" id="L224">		this.contextObject = new JSONObject();</span>
+<span class="fc" id="L225">		operation.accept(buffer);</span>
+<span class="fc" id="L226">	}</span>
+
+	/**
+	 * Processes a new input and returns a {@link List} of answers
+	 * 
+	 * @param input the input to process
+	 * @return a {@link List} of answers
+	 */
+	public List&lt;String&gt; userInput(String input) {
+<span class="fc bfc" id="L235" title="All 2 branches covered.">		if (this.closed) {</span>
+<span class="fc" id="L236">			logIllegalAccess();</span>
+<span class="fc" id="L237">			return new ArrayList&lt;&gt;();</span>
+		}
+<span class="fc bfc" id="L239" title="All 4 branches covered.">		if (input == null || input.isBlank()) {</span>
+<span class="fc" id="L240">			Logging.warn(&quot;The user input was null or blank&quot;);</span>
+<span class="fc" id="L241">			UserOutput.addDefaultErrorMessage();</span>
+<span class="fc" id="L242">			return UserOutput.popNextOutput();</span>
+		}
+<span class="fc" id="L244">		Logging.userInput(input);</span>
+<span class="fc" id="L245">		leaveSleepState();</span>
+<span class="fc bfc" id="L246" title="All 2 branches covered.">		if (this.wasLastQuestionSkillQuestion) {</span>
+<span class="fc" id="L247">			processSkillQuestion(input);</span>
+<span class="fc bfc" id="L248" title="All 2 branches covered.">		} else if (this.wasLastQuestionChooseSkill) {</span>
+<span class="fc" id="L249">			processChooseSkillQuestion(input);</span>
+		} else {
+<span class="fc" id="L251">			processNormalRequest(input);</span>
+		}
+
+<span class="fc" id="L254">		return UserOutput.popNextOutput();</span>
+	}
+
+	/**
+	 * Processes the input normally as a new input not relating to a question asked
+	 * previously
+	 * 
+	 * @param input the user input
+	 */
+	private void processNormalRequest(String input) {
+<span class="fc" id="L264">		processINLPAnswer(this.nlpComponent.understandInput(input, this.contextObject));</span>
+
+<span class="fc" id="L266">	}</span>
+
+	/**
+	 * Processes the input normally as a new input not relating to a question asked
+	 * previously
+	 * 
+	 * @param processedInput the {@link INLPAnswer} of a {@link INLPComponent}
+	 */
+	private void processINLPAnswer(INLPAnswer processedInput) {
+<span class="fc bfc" id="L275" title="All 2 branches covered.">		if (processedInput == null) {</span>
+<span class="fc" id="L276">			Logging.error(&quot;NLP Component's returned INLPAnswer is null&quot;);</span>
+<span class="fc" id="L277">			UserOutput.addDefaultErrorMessage();</span>
+<span class="fc" id="L278">			return;</span>
+		}
+<span class="fc" id="L280">		List&lt;String&gt; intents = processedInput.getIntents();</span>
+<span class="fc" id="L281">		Locale foundLanguage = processedInput.getInputLanguage();</span>
+<span class="fc" id="L282">		boolean addedEntities = processedInput.hasAddedEntities();</span>
+<span class="fc bfc" id="L283" title="All 2 branches covered.">		if (foundLanguage == null) {</span>
+<span class="fc" id="L284">			Logging.error(&quot;NLPComponent did not return a language&quot;);</span>
+		} else {
+<span class="fc" id="L286">			I18n.setLanguage(foundLanguage);</span>
+		}
+		// If the NLPAnswer has no result -&gt; treat it as bad input
+<span class="fc bfc" id="L289" title="All 6 branches covered.">		if (!addedEntities &amp;&amp; (intents == null || intents.isEmpty())) {</span>
+<span class="fc" id="L290">			UserOutput.addDefaultErrorMessage();</span>
+<span class="fc" id="L291">			return;</span>
+		}
+<span class="pc bpc" id="L293" title="1 of 4 branches missed.">		if (intents != null &amp;&amp; !intents.isEmpty()) {</span>
+			// keep the correct input order for the stack/dequeue
+<span class="fc" id="L295">			Collections.reverse(intents);</span>
+<span class="fc" id="L296">			this.pendingIntents.addAll(intents);</span>
+<span class="fc bfc" id="L297" title="All 4 branches covered.">			if (this.wasLastQuestionAbortQuestion || this.wasLastQuestionReturnToPreviousSkill) {</span>
+<span class="fc" id="L298">				processSpecialQuestion();</span>
+<span class="fc" id="L299">				return;</span>
+			}
+<span class="fc bfc" id="L301" title="All 2 branches covered.">			if (&quot;abort&quot;.equalsIgnoreCase(intents.get(0))) {</span>
+<span class="fc" id="L302">				this.pendingIntents.removeLast();</span>
+<span class="fc" id="L303">				abortRequested();</span>
+<span class="fc" id="L304">				return;</span>
+			}
+		}
+<span class="fc" id="L307">		evaluateNextAction();</span>
+<span class="fc" id="L308">	}</span>
+
+	private void processSpecialQuestion() {
+<span class="fc bfc" id="L311" title="All 2 branches covered.">		if (this.wasLastQuestionAbortQuestion) {</span>
+<span class="fc" id="L312">			this.wasLastQuestionAbortQuestion = false;</span>
+<span class="fc" id="L313">			processAbortQuestion();</span>
+<span class="pc bpc" id="L314" title="1 of 2 branches missed.">		} else if (wasLastQuestionReturnToPreviousSkill) {</span>
+<span class="fc" id="L315">			this.wasLastQuestionReturnToPreviousSkill = false;</span>
+<span class="fc" id="L316">			processReturnToPreviousSkillQuestion();</span>
+		}
+
+<span class="fc" id="L319">	}</span>
+
+	/**
+	 * Tries to process the intent as an answer to an abort question &lt;br&gt;
+	 * &lt;br&gt;
+	 * If the answer was to abort the last skill, then the
+	 * {@link #currentSkillStateMachine} will be
+	 * {@link #resetCurrentSkillStateMachine reset} and the next action will be
+	 * {@link #evaluateNextAction() evaluated} &lt;br&gt;
+	 * 
+	 * If the answer was to abort all skills, then the pipeline will be
+	 * {@link #clearPipeline cleared} &lt;br&gt;
+	 * If the abort question was not answered, the input will be processed
+	 * {@link #processNormalRequest(String)}
+	 * 
+	 * @param intent the intent to process
+	 */
+	private void processAbortQuestion() {
+<span class="fc" id="L337">		String intent = this.pendingIntents.peekLast();</span>
+<span class="fc bfc" id="L338" title="All 2 branches covered.">		if (&quot;last&quot;.equalsIgnoreCase(intent)) {</span>
+<span class="fc" id="L339">			this.pendingIntents.removeLast();</span>
+<span class="fc" id="L340">			resetCurrentSkillStateMachine(false);</span>
+<span class="fc" id="L341">			UserOutput.addOutputMessageFromLocalizationKey(&quot;BackToSkill&quot;, this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L342">			evaluateNextAction();</span>
+<span class="fc" id="L343">			return;</span>
+		}
+<span class="fc bfc" id="L345" title="All 2 branches covered.">		if (&quot;all&quot;.equalsIgnoreCase(intent)) {</span>
+<span class="fc" id="L346">			this.pendingIntents.removeLast();</span>
+<span class="fc" id="L347">			this.clearPipeline();</span>
+<span class="fc" id="L348">			return;</span>
+		}
+<span class="fc" id="L350">		askAbortQuestion();</span>
+<span class="fc" id="L351">	}</span>
+
+	/**
+	 * Tries to process the intent as an answer to the &quot;Return to the previous
+	 * skill&quot; question&lt;br&gt;
+	 * &lt;br&gt;
+	 * 
+	 * If the answer was to return to the next skill, then the
+	 * {@link #currentSkillStateMachine} will be
+	 * {@link #resetCurrentSkillStateMachine(boolean) reset}&lt;br&gt;
+	 * 
+	 * If the answer was to abort all skills, then the pipeline will be
+	 * {@link #clearPipeline() cleared}&lt;br&gt;
+	 * 
+	 * If the abort question was not answered, the input will be processed
+	 * {@link #processNormalRequest normally}
+	 * 
+	 * @param intent the intent to process
+	 * 
+	 */
+	private void processReturnToPreviousSkillQuestion() {
+<span class="fc" id="L372">		String intent = this.pendingIntents.peekLast();</span>
+<span class="fc bfc" id="L373" title="All 2 branches covered.">		if (&quot;Yes&quot;.equalsIgnoreCase(intent)) {</span>
+<span class="fc" id="L374">			this.pendingIntents.removeLast();</span>
+<span class="fc" id="L375">			UserOutput.addOutputMessageFromLocalizationKey(&quot;BackToSkill&quot;, this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L376">			evaluateNextAction();</span>
+<span class="fc" id="L377">			return;</span>
+		}
+<span class="fc bfc" id="L379" title="All 2 branches covered.">		if (&quot;No&quot;.equalsIgnoreCase(intent)) {</span>
+<span class="fc" id="L380">			this.pendingIntents.removeLast();</span>
+<span class="fc" id="L381">			resetCurrentSkillStateMachine(true);</span>
+<span class="fc" id="L382">			return;</span>
+		}
+<span class="fc" id="L384">		askContinueLastSkill();</span>
+<span class="fc" id="L385">	}</span>
+
+	/**
+	 * Tries to process the input as an answer to a skill question. If the question
+	 * was not answered, the corresponding skill will have to ask the question again
+	 * 
+	 * @param input the input to process
+	 */
+	private void processSkillQuestion(String input) {
+<span class="fc" id="L394">		this.wasLastQuestionSkillQuestion = false;</span>
+<span class="fc" id="L395">		String entityName = &quot;&quot;;</span>
+		INLPAnswer processedInput;
+<span class="fc" id="L397">		entityName = this.pendingSkillQuestions.getTopEntity(this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L398">		processedInput = this.nlpComponent.understandInput(input, entityName, this.contextObject);</span>
+		// Remove last asked question. If the question was not answered, then the
+		// corresponding skill will have to ask the same question again
+<span class="fc" id="L401">		this.pendingSkillQuestions.removeTopQuestionAndEntity(this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L402">		processINLPAnswer(processedInput);</span>
+<span class="fc" id="L403">	}</span>
+
+	/**
+	 * Tries to process the input as an answer to a question to choose a skill&lt;br&gt;
+	 * &lt;br&gt;
+	 * If the input equals to a fitting skill, that skill will be executed and the
+	 * last intent will be processed Otherwise the input will be processed as a
+	 * {@link #processNormalRequest normal request}
+	 * 
+	 * @param input the input to process
+	 */
+	private void processChooseSkillQuestion(String input) {
+		// match input to possible skills to choose from
+<span class="fc" id="L416">		String nextSkill = this.possibleSkillsForChooseSkillQuestion.stream().filter(input::equalsIgnoreCase)</span>
+<span class="fc" id="L417">				.findFirst().orElse(&quot;&quot;);</span>
+
+<span class="fc bfc" id="L419" title="All 2 branches covered.">		if (nextSkill.isEmpty()) {</span>
+<span class="fc" id="L420">			Logging.debug(</span>
+					&quot;The question to choose a skill was not answered!\nPossible skills are: {}\nUser input is: {}&quot;,
+					this.possibleSkillsForChooseSkillQuestion, input);
+<span class="fc" id="L423">			askChooseSkillQuestion();</span>
+		} else {
+<span class="fc" id="L425">			this.wasLastQuestionChooseSkill = false;</span>
+<span class="fc" id="L426">			final String skillName = nextSkill;</span>
+<span class="fc" id="L427">			leaveCurrentSkillStateMachine();</span>
+<span class="fc" id="L428">			this.currentSkillStateMachine = this.allSkillStateMachines.stream()</span>
+<span class="fc" id="L429">					.filter(skill -&gt; skill.getName().equals(skillName)).findFirst().orElse(null);</span>
+<span class="fc" id="L430">			evaluateNextAction();</span>
+		}
+<span class="fc" id="L432">	}</span>
+
+	/**
+	 * Processes the next {@link #pendingIntents intent}
+	 *
+	 */
+	private void processNextIntent() {
+<span class="fc" id="L439">		String intent = pendingIntents.peekLast();</span>
+<span class="fc" id="L440">		Logging.debug(&quot;Processing the intent '{}'&quot;, intent);</span>
+<span class="fc" id="L441">		this.lastIntent = intent;</span>
+<span class="fc" id="L442">		SkillStateMachine nextSkillStateMachine = getNextSkillStateMachine(intent);</span>
+<span class="fc bfc" id="L443" title="All 2 branches covered.">		if (nextSkillStateMachine == null) {</span>
+<span class="fc" id="L444">			return;</span>
+		}
+<span class="fc" id="L446">		this.currentSkillStateMachine = nextSkillStateMachine;</span>
+
+<span class="fc" id="L448">		ISkillAnswer answer = this.currentSkillStateMachine.execute(intent, this.contextObject);</span>
+<span class="fc bfc" id="L449" title="All 2 branches covered.">		if (answer == null) {</span>
+<span class="fc" id="L450">			UserOutput.addDefaultErrorMessage();</span>
+<span class="fc" id="L451">			return;</span>
+		}
+
+<span class="fc" id="L454">		this.processSkillAnswer(answer);</span>
+<span class="fc" id="L455">		boolean skillMachineEnded = this.hasSkillStateMachineEnded();</span>
+<span class="fc bfc" id="L456" title="All 4 branches covered.">		if (skillMachineEnded &amp;&amp; this.currentSkillStateMachine != null) {</span>
+<span class="fc" id="L457">			wasLastQuestionReturnToPreviousSkill = true;</span>
+<span class="fc" id="L458">			askContinueLastSkill();</span>
+<span class="fc" id="L459">			return;</span>
+		}
+<span class="fc" id="L461">		evaluateNextAction();</span>
+<span class="fc" id="L462">	}</span>
+
+	/**
+	 * Processes a {@link ISkillAnswer} of a skill
+	 * 
+	 * @param skillAnswer the answer of a skill
+	 */
+	private void processSkillAnswer(ISkillAnswer skillAnswer) {
+<span class="fc" id="L470">		boolean answerIsEmpty = true;</span>
+<span class="fc bfc" id="L471" title="All 4 branches covered.">		if (skillAnswer.answers() != null &amp;&amp; !skillAnswer.answers().isEmpty()) {</span>
+<span class="fc" id="L472">			UserOutput.addOutputMessages(skillAnswer.answers());</span>
+<span class="fc" id="L473">			answerIsEmpty = false;</span>
+		}
+<span class="fc bfc" id="L475" title="All 2 branches covered.">		if (skillAnswer.skipUserOutput()) {</span>
+<span class="fc" id="L476">			Logging.debug(&quot;Skipping user Output&quot;);</span>
+<span class="fc" id="L477">			return;</span>
+		}
+<span class="fc bfc" id="L479" title="All 2 branches covered.">		if (skillAnswer.requiredQuestionsToBeAnswered() == null</span>
+<span class="fc bfc" id="L480" title="All 2 branches covered.">				|| skillAnswer.requiredQuestionsToBeAnswered().isEmpty()) {</span>
+			// remove last processed intent
+<span class="fc" id="L482">			this.pendingIntents.removeLast();</span>
+			// no skill answer and no skill question
+<span class="fc bfc" id="L484" title="All 2 branches covered.">			if (answerIsEmpty) {</span>
+<span class="fc" id="L485">				Logging.error(&quot;The Skill {} returned no answer and no questions&quot;,</span>
+<span class="fc" id="L486">						this.currentSkillStateMachine.getName());</span>
+			}
+<span class="fc" id="L488">			return;</span>
+		}
+<span class="fc" id="L490">		Map&lt;String, String&gt; newQuestions = skillAnswer.requiredQuestionsToBeAnswered();</span>
+<span class="fc bfc" id="L491" title="All 2 branches covered.">		for (Entry&lt;String, String&gt; entry : newQuestions.entrySet()) {</span>
+<span class="fc" id="L492">			this.pendingSkillQuestions.addQuestion(this.currentSkillStateMachine.getName(), entry.getKey(),</span>
+<span class="fc" id="L493">					entry.getValue());</span>
+<span class="fc" id="L494">		}</span>
+<span class="fc" id="L495">	}</span>
+
+	/**
+	 * Evaluates the next possible action. &lt;br&gt;
+	 */
+	private void evaluateNextAction() {
+
+		// if the intent is still the same and the skill for the intent has questions
+		// left to ask of the user
+<span class="fc bfc" id="L504" title="All 4 branches covered.">		if (this.currentSkillStateMachine != null &amp;&amp; !this.pendingIntents.isEmpty()</span>
+<span class="fc bfc" id="L505" title="All 2 branches covered.">				&amp;&amp; this.lastIntent.equals(this.pendingIntents.peekLast())</span>
+<span class="fc bfc" id="L506" title="All 2 branches covered.">				&amp;&amp; this.pendingSkillQuestions.getNumberOfQuestions(this.currentSkillStateMachine.getName()) &gt; 0) {</span>
+<span class="fc" id="L507">			askNextQuestion();</span>
+<span class="fc" id="L508">			return;</span>
+
+		}
+
+<span class="fc bfc" id="L512" title="All 2 branches covered.">		if (!this.pendingIntents.isEmpty()) {</span>
+<span class="fc" id="L513">			processNextIntent();</span>
+		}
+<span class="fc" id="L515">	}</span>
+
+	/**
+	 * If {@link #lastUsedSkillStateMachine} is null, then the {@link #clearPipeline
+	 * pipeline will be cleared} &lt;br&gt;
+	 * If not then an abort question will be asked
+	 */
+	private void abortRequested() {
+		// can only abort current skillSM
+<span class="fc bfc" id="L524" title="All 2 branches covered.">		if (this.lastUsedSkillStateMachine == null) {</span>
+<span class="fc" id="L525">			this.clearPipeline();</span>
+<span class="fc" id="L526">			return;</span>
+		}
+<span class="fc" id="L528">		this.wasLastQuestionAbortQuestion = true;</span>
+<span class="fc" id="L529">		askAbortQuestion();</span>
+<span class="fc" id="L530">	}</span>
+
+	/**
+	 * Resets the {@link ConversationsEngine} to the initial state, except for the
+	 * {@link #contextObject}
+	 */
+	private void clearPipeline() {
+		// reset both, the current and last skillStateMachine
+<span class="fc" id="L538">		resetCurrentSkillStateMachine(true);</span>
+<span class="fc" id="L539">		this.pendingIntents.clear();</span>
+<span class="fc" id="L540">		this.pendingSkillQuestions.clear();</span>
+<span class="fc" id="L541">		wasLastQuestionChooseSkill = false;</span>
+<span class="fc" id="L542">		wasLastQuestionSkillQuestion = false;</span>
+<span class="fc" id="L543">		wasLastQuestionAbortQuestion = false;</span>
+<span class="fc" id="L544">		wasLastQuestionReturnToPreviousSkill = false;</span>
+<span class="fc" id="L545">		possibleSkillsForChooseSkillQuestion.clear();</span>
+<span class="fc" id="L546">		lastIntent = &quot;&quot;;</span>
+<span class="fc" id="L547">	}</span>
+
+	/**
+	 * Creates a new {@link Timer} that transitions the {@link ConversationsEngine}
+	 * into the sleepState after {@link #timeoutInSeconds } seconds and if an old
+	 * timer exists, cancels it
+	 */
+	private void scheduleNewTimeoutTask() {
+		// This could be extended
+<span class="fc" id="L556">		TimerTask timerTask = new TimerTask() {</span>
+			@Override
+			public void run() {
+<span class="pc bpc" id="L559" title="1 of 2 branches missed.">				if (&quot;defaultState&quot;.equals(currentState.getName())) {</span>
+<span class="fc" id="L560">					Logging.debug(&quot;Entering Sleep State&quot;);</span>
+<span class="fc" id="L561">					currentState = currentState.getNextState(&quot;SLEEP&quot;);</span>
+				}
+<span class="fc" id="L563">			}</span>
+		};
+<span class="fc" id="L565">		this.timer.cancel();</span>
+<span class="fc" id="L566">		this.timer = new Timer();</span>
+<span class="fc" id="L567">		this.timer.schedule(timerTask, this.timeoutInSeconds * 1000L);</span>
+<span class="fc" id="L568">	}</span>
+
+	/**
+	 * Resets the {@link #timer}.&lt;br&gt;
+	 * If the {@link ConversationsEngine} is currently in the sleepState, then it
+	 * will transition to the defaultState
+	 */
+	private void leaveSleepState() {
+<span class="fc bfc" id="L576" title="All 2 branches covered.">		if (&quot;sleepState&quot;.equals(this.currentState.getName())) {</span>
+<span class="fc" id="L577">			Logging.debug(&quot;Leaving Sleep State&quot;);</span>
+<span class="fc" id="L578">			this.currentState = this.currentState.getNextState(&quot;WAKEUP&quot;);</span>
+<span class="fc" id="L579">			UserOutput.addOutputMessageFromLocalizationKey(&quot;WelcomeBack&quot;);</span>
+		}
+
+<span class="fc" id="L582">		scheduleNewTimeoutTask();</span>
+<span class="fc" id="L583">	}</span>
+
+	/**
+	 * Adds the next question of a skill to the {@link UserOutput}
+	 */
+	private void askNextQuestion() {
+<span class="fc" id="L589">		String nextQuestion = this.pendingSkillQuestions.getTopQuestion(this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L590">		UserOutput.addOutputQuestion(nextQuestion);</span>
+<span class="fc" id="L591">		this.wasLastQuestionSkillQuestion = true;</span>
+<span class="fc" id="L592">	}</span>
+
+	/**
+	 * Adds the question of choosing a skill to the {@link UserOutput}
+	 */
+	private void askChooseSkillQuestion() {
+<span class="fc" id="L598">		UserOutput.addOutputMessageFromLocalizationKey(&quot;MultipleSkills&quot;,</span>
+<span class="fc" id="L599">				this.possibleSkillsForChooseSkillQuestion.stream().collect(Collectors.joining(&quot;,&quot;)));</span>
+<span class="fc" id="L600">	}</span>
+
+	/**
+	 * Adds the question, weather the user wants to abort the last or all skills, to
+	 * the {@link UserOutput}
+	 */
+	private void askAbortQuestion() {
+<span class="fc" id="L607">		UserOutput.addOutputMessageFromLocalizationKey(&quot;AbortQuestion&quot;);</span>
+<span class="fc" id="L608">	}</span>
+
+	/**
+	 * Adds the question weather the user wants to continue the last skill, to the
+	 * {@link UserOutput}
+	 */
+	private void askContinueLastSkill() {
+<span class="fc" id="L615">		UserOutput.addOutputMessageFromLocalizationKey(&quot;ContinueLastSkill&quot;, this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L616">	}</span>
+
+	/**
+	 * Determines the possible skills for a given intent
+	 * 
+	 * @param intent the intent thats supposed to be processed by a skill
+	 * @return the {@link SkillStateMachine} to the corresponding skill, that can
+	 *         execute the given intent. Or returns null if no or more than one
+	 *         skill was found to process the intent
+	 */
+	private SkillStateMachine getNextSkillStateMachine(String intent) {
+
+<span class="fc bfc" id="L628" title="All 4 branches covered.">		if (this.currentSkillStateMachine != null &amp;&amp; this.currentSkillStateMachine.canExecute(intent)) {</span>
+<span class="fc" id="L629">			return this.currentSkillStateMachine;</span>
+		}
+
+<span class="fc" id="L632">		List&lt;SkillStateMachine&gt; possibleSkills = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L633" title="All 2 branches covered.">		for (SkillStateMachine ssm : allSkillStateMachines) {</span>
+<span class="fc bfc" id="L634" title="All 2 branches covered.">			if (ssm.canExecute(intent)) {</span>
+<span class="fc" id="L635">				possibleSkills.add(ssm);</span>
+			}
+<span class="fc" id="L637">		}</span>
+
+<span class="fc bfc" id="L639" title="All 2 branches covered.">		if (possibleSkills.isEmpty()) {</span>
+<span class="fc" id="L640">			UserOutput.addOutputMessageFromLocalizationKey(&quot;NoSkillFound&quot;);</span>
+<span class="fc" id="L641">			Logging.debug(&quot;Could not find a skill to process the intent {}&quot;, intent);</span>
+<span class="fc" id="L642">			return null;</span>
+		}
+
+<span class="fc bfc" id="L645" title="All 2 branches covered.">		if (possibleSkills.size() &gt; 1) {</span>
+<span class="fc bfc" id="L646" title="All 2 branches covered.">			for (SkillStateMachine ssm : possibleSkills) {</span>
+<span class="fc" id="L647">				this.possibleSkillsForChooseSkillQuestion.add(ssm.getName());</span>
+<span class="fc" id="L648">			}</span>
+<span class="fc" id="L649">			askChooseSkillQuestion();</span>
+<span class="fc" id="L650">			Logging.debug(&quot;The intent {} can be processed by multiple skills: {}&quot;, intent,</span>
+					this.possibleSkillsForChooseSkillQuestion);
+<span class="fc" id="L652">			this.wasLastQuestionChooseSkill = true;</span>
+<span class="fc" id="L653">			return null;</span>
+		}
+
+<span class="fc bfc" id="L656" title="All 2 branches covered.">		if (this.currentSkillStateMachine != null</span>
+<span class="pc bpc" id="L657" title="1 of 2 branches missed.">				&amp;&amp; !possibleSkills.get(0).getName().equals(currentSkillStateMachine.getName())) {</span>
+<span class="fc" id="L658">			leaveCurrentSkillStateMachine();</span>
+		}
+<span class="fc" id="L660">		return possibleSkills.get(0);</span>
+
+	}
+
+	/**
+	 * leaves the {@link #currentSkillStateMachine} and sets it as the
+	 * {@link #lastUsedSkillStateMachine}
+	 */
+	private void leaveCurrentSkillStateMachine() {
+<span class="fc bfc" id="L669" title="All 2 branches covered.">		if (this.currentSkillStateMachine != null) {</span>
+<span class="fc" id="L670">			Logging.debug(&quot;Leaving the skill {}&quot;, this.currentSkillStateMachine.getName());</span>
+		}
+<span class="fc" id="L672">		this.lastUsedSkillStateMachine = this.currentSkillStateMachine;</span>
+<span class="fc" id="L673">	}</span>
+
+	/**
+	 * Resets the {@link #currentSkillStateMachine} and removes all pending
+	 * questions relating to the skill
+	 * 
+	 * @param alsoResetLastUsedSkillStateMachine if true, then also resets the
+	 *                                           {@link #lastUsedSkillStateMachine}
+	 *                                           and removes all pending questions
+	 *                                           relating to that skill
+	 */
+	private void resetCurrentSkillStateMachine(boolean alsoResetLastUsedSkillStateMachine) {
+<span class="fc bfc" id="L685" title="All 2 branches covered.">		if (this.currentSkillStateMachine == null) {</span>
+<span class="fc" id="L686">			return;</span>
+		}
+<span class="fc" id="L688">		removeIntentsOfCurrentSkill();</span>
+<span class="fc" id="L689">		this.currentSkillStateMachine.reset();</span>
+<span class="fc" id="L690">		this.pendingSkillQuestions.removeAllSkillQuestions(this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L691">		this.wasLastQuestionSkillQuestion = false;</span>
+<span class="fc" id="L692">		this.currentSkillStateMachine = this.lastUsedSkillStateMachine;</span>
+<span class="fc bfc" id="L693" title="All 2 branches covered.">		if (alsoResetLastUsedSkillStateMachine) {</span>
+<span class="fc" id="L694">			resetCurrentSkillStateMachine(false);</span>
+		}
+<span class="fc" id="L696">	}</span>
+
+	/**
+	 * Removes all {@link #pendingIntents} that the
+	 * {@link #currentSkillStateMachine} can execute
+	 */
+	private void removeIntentsOfCurrentSkill() {
+<span class="fc" id="L703">		Iterator&lt;String&gt; iterator = this.pendingIntents.iterator();</span>
+<span class="fc bfc" id="L704" title="All 2 branches covered.">		while (iterator.hasNext()) {</span>
+<span class="fc" id="L705">			String intent = iterator.next();</span>
+<span class="fc bfc" id="L706" title="All 2 branches covered.">			if (this.currentSkillStateMachine.canExecute(intent)) {</span>
+<span class="fc" id="L707">				iterator.remove();</span>
+			}
+<span class="fc" id="L709">		}</span>
+<span class="fc" id="L710">	}</span>
+
+	/**
+	 * Checks weather the {@link #currentSkillStateMachine} has ended or not
+	 * 
+	 * @return true if the {@link #currentSkillStateMachine} has ended
+	 */
+	private boolean hasSkillStateMachineEnded() {
+<span class="fc" id="L718">		boolean currentSkillStateMachineEnded = this.currentSkillStateMachine.hasEnded();</span>
+<span class="fc bfc" id="L719" title="All 2 branches covered.">		if (currentSkillStateMachineEnded) {</span>
+<span class="fc" id="L720">			Logging.debug(&quot;The Skill {} Ended&quot;, this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L721">			resetCurrentSkillStateMachine(false);</span>
+<span class="fc" id="L722">			this.currentSkillStateMachine = this.lastUsedSkillStateMachine;</span>
+<span class="fc" id="L723">			this.lastUsedSkillStateMachine = null;</span>
+		}
+
+<span class="fc" id="L726">		return currentSkillStateMachineEnded;</span>
+	}
+
+	/**
+	 * Logs that a method on this object was called after it has been shut down
+	 */
+	private void logIllegalAccess() {
+<span class="fc" id="L733">		Logging.error(&quot;The ConversationsEngine was invoked after it has been shut down&quot;);</span>
+<span class="fc" id="L734">	}</span>
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

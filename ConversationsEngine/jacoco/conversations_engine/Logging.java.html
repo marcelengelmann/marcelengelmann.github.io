@@ -63,10 +63,20 @@ class Logging {
 	 * Log a message on WARN level with the DeveloperLogger
 	 * 
 	 * @param message the message to be logged
+	 * @param args    the arguments for the message
+	 */
+	static void warn(String message, Object... args) {
+<span class="nc" id="L69">		debugLogger.warn(message, args);</span>
+<span class="nc" id="L70">	}</span>
+
+	/**
+	 * Log a message on WARN level with the DeveloperLogger
+	 * 
+	 * @param message the message to be logged
 	 */
 	static void warn(String message) {
-<span class="fc" id="L68">		debugLogger.warn(message);</span>
-<span class="fc" id="L69">	}</span>
+<span class="fc" id="L78">		debugLogger.warn(message);</span>
+<span class="fc" id="L79">	}</span>
 
 	/**
 	 * Log a message on ERROR level with the DeveloperLogger
@@ -74,8 +84,8 @@ class Logging {
 	 * @param message the message to be logged
 	 */
 	static void error(String message) {
-<span class="fc" id="L77">		debugLogger.error(message);</span>
-<span class="fc" id="L78">	}</span>
+<span class="fc" id="L87">		debugLogger.error(message);</span>
+<span class="fc" id="L88">	}</span>
 
 	/**
 	 * Log a message with arguments on ERROR level with the DeveloperLogger
@@ -84,7 +94,7 @@ class Logging {
 	 * @param args    the arguments for the message
 	 */
 	static void error(String message, Object... args) {
-<span class="fc" id="L87">		debugLogger.error(message, args);</span>
-<span class="fc" id="L88">	}</span>
+<span class="fc" id="L97">		debugLogger.error(message, args);</span>
+<span class="fc" id="L98">	}</span>
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

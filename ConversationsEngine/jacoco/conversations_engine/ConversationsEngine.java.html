@@ -98,7 +98,7 @@ public class ConversationsEngine {
 <span class="fc" id="L98">		this.wasLastQuestionReturnToPreviousSkill = false;</span>
 <span class="fc" id="L99">		this.closed = false;</span>
 <span class="fc" id="L100">		this.timeoutInSeconds = timeoutInSeconds;</span>
-<span class="fc" id="L101">		I18n.setLanguage(new Locale(&quot;de&quot;, &quot;DE&quot;));</span>
+<span class="fc" id="L101">		I18n.setDefaultLanguage(new Locale(&quot;de&quot;, &quot;DE&quot;));</span>
 		// the list of intents the ConversationsEngine uses itself (as trigger words)
 <span class="fc" id="L103">		List&lt;String&gt; triggerIntents = new ArrayList&lt;&gt;();</span>
 <span class="fc" id="L104">		triggerIntents.add(&quot;abort&quot;);</span>
@@ -201,13 +201,13 @@ public class ConversationsEngine {
 <span class="fc" id="L201">	}</span>
 
 	/**
-	 * Shuts this ConversationsEngine object down and returns the current context
-	 * object to the given operation
+	 * Shuts this ConversationsEngine object down and invokes the given Consumer
+	 * operation with the current context object as a StringBuilder
 	 * 
 	 * @param operation the operation to call, with the context object passed as
 	 *                  parameter, after shutting down.
 	 */
-	public void shutdown(Consumer&lt;StringBuffer&gt; operation) {
+	public void shutdown(Consumer&lt;StringBuilder&gt; operation) {
 <span class="fc bfc" id="L211" title="All 2 branches covered.">		if (this.closed) {</span>
 <span class="fc" id="L212">			logIllegalAccess();</span>
 <span class="fc" id="L213">			return;</span>
@@ -219,10 +219,10 @@ public class ConversationsEngine {
 <span class="fc" id="L219">			Logging.warn(&quot;The consumer passed to the shutdown function was null&quot;);</span>
 <span class="fc" id="L220">			return;</span>
 		}
-<span class="fc" id="L222">		StringBuffer buffer = new StringBuffer();</span>
-<span class="fc" id="L223">		buffer.append(this.contextObject);</span>
+<span class="fc" id="L222">		StringBuilder sb = new StringBuilder();</span>
+<span class="fc" id="L223">		sb.append(this.contextObject);</span>
 <span class="fc" id="L224">		this.contextObject = new JSONObject();</span>
-<span class="fc" id="L225">		operation.accept(buffer);</span>
+<span class="fc" id="L225">		operation.accept(sb);</span>
 <span class="fc" id="L226">	}</span>
 
 	/**

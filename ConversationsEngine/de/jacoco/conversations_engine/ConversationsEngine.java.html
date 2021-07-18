@@ -392,15 +392,14 @@ public class ConversationsEngine {
 	 */
 	private void processSkillQuestion(String input) {
 <span class="fc" id="L394">		this.wasLastQuestionSkillQuestion = false;</span>
-<span class="fc" id="L395">		String entityName = &quot;&quot;;</span>
 		INLPAnswer processedInput;
-<span class="fc" id="L397">		entityName = this.pendingSkillQuestions.getTopEntity(this.currentSkillStateMachine.getName());</span>
-<span class="fc" id="L398">		processedInput = this.nlpComponent.understandInput(input, entityName, this.contextObject);</span>
+<span class="fc" id="L396">		String entityName = this.pendingSkillQuestions.getTopEntity(this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L397">		processedInput = this.nlpComponent.understandInput(input, entityName, this.contextObject);</span>
 		// Remove last asked question. If the question was not answered, then the
 		// corresponding skill will have to ask the same question again
-<span class="fc" id="L401">		this.pendingSkillQuestions.removeTopQuestionAndEntity(this.currentSkillStateMachine.getName());</span>
-<span class="fc" id="L402">		processINLPAnswer(processedInput);</span>
-<span class="fc" id="L403">	}</span>
+<span class="fc" id="L400">		this.pendingSkillQuestions.removeTopQuestionAndEntity(this.currentSkillStateMachine.getName());</span>
+<span class="fc" id="L401">		processINLPAnswer(processedInput);</span>
+<span class="fc" id="L402">	}</span>
 
 	/**
 	 * Tries to process the input as an answer to a question to choose a skill&lt;br&gt;
@@ -413,21 +412,22 @@ public class ConversationsEngine {
 	 */
 	private void processChooseSkillQuestion(String input) {
 		// match input to possible skills to choose from
-<span class="fc" id="L416">		String nextSkill = this.possibleSkillsForChooseSkillQuestion.stream().filter(input::equalsIgnoreCase)</span>
-<span class="fc" id="L417">				.findFirst().orElse(&quot;&quot;);</span>
+<span class="fc" id="L415">		String nextSkill = this.possibleSkillsForChooseSkillQuestion.stream().filter(input::equalsIgnoreCase)</span>
+<span class="fc" id="L416">				.findFirst().orElse(&quot;&quot;);</span>
 
-<span class="fc bfc" id="L419" title="All 2 branches covered.">		if (nextSkill.isEmpty()) {</span>
-<span class="fc" id="L420">			Logging.debug(</span>
+<span class="fc bfc" id="L418" title="All 2 branches covered.">		if (nextSkill.isEmpty()) {</span>
+<span class="fc" id="L419">			Logging.debug(</span>
 					&quot;The question to choose a skill was not answered!\nPossible skills are: {}\nUser input is: {}&quot;,
 					this.possibleSkillsForChooseSkillQuestion, input);
-<span class="fc" id="L423">			askChooseSkillQuestion();</span>
+<span class="fc" id="L422">			askChooseSkillQuestion();</span>
 		} else {
-<span class="fc" id="L425">			this.wasLastQuestionChooseSkill = false;</span>
-<span class="fc" id="L426">			final String skillName = nextSkill;</span>
-<span class="fc" id="L427">			leaveCurrentSkillStateMachine();</span>
-<span class="fc" id="L428">			this.currentSkillStateMachine = this.allSkillStateMachines.stream()</span>
-<span class="fc" id="L429">					.filter(skill -&gt; skill.getName().equals(skillName)).findFirst().orElse(null);</span>
-<span class="fc" id="L430">			evaluateNextAction();</span>
+<span class="fc" id="L424">			this.wasLastQuestionChooseSkill = false;</span>
+<span class="fc" id="L425">			final String skillName = nextSkill;</span>
+<span class="fc" id="L426">			leaveCurrentSkillStateMachine();</span>
+<span class="fc" id="L427">			this.currentSkillStateMachine = this.allSkillStateMachines.stream()</span>
+<span class="fc" id="L428">					.filter(skill -&gt; skill.getName().equals(skillName)).findFirst().orElse(null);</span>
+<span class="fc" id="L429">			evaluateNextAction();</span>
+<span class="fc" id="L430">			this.possibleSkillsForChooseSkillQuestion.clear();</span>
 		}
 <span class="fc" id="L432">	}</span>
 

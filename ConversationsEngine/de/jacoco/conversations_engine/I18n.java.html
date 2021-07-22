@@ -34,23 +34,32 @@ class I18n {
 <span class="fc" id="L34">	}</span>
 
 	/**
+	 * Returns the currently used language locale
+	 * 
+	 * @return the currently used language locale
+	 */
+	static Locale getLanguage() {
+<span class="fc" id="L42">		return bundle.getLocale();</span>
+	}
+
+	/**
 	 * Sets the default language for the {@link ConversationsEngine}.
 	 * 
 	 * @param language the language locale to use as default
 	 */
 	static void setDefaultLanguage(Locale language) {
 		// Check weather the locale exists or not
-<span class="fc" id="L43">		if (ResourceBundle.getBundle(&quot;localization.localization&quot;, language).getLocale().getLanguage()</span>
-<span class="pc bpc" id="L44" title="1 of 2 branches missed.">				.equals(language.getLanguage())) {</span>
-<span class="fc" id="L45">			defaultLocale = language;</span>
-<span class="fc" id="L46">			setLanguage(defaultLocale);</span>
-<span class="fc" id="L47">			return;</span>
+<span class="fc" id="L52">		if (ResourceBundle.getBundle(&quot;localization.localization&quot;, language).getLocale().getLanguage()</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">				.equals(language.getLanguage())) {</span>
+<span class="fc" id="L54">			defaultLocale = language;</span>
+<span class="fc" id="L55">			setLanguage(defaultLocale);</span>
+<span class="fc" id="L56">			return;</span>
 		}
-<span class="nc" id="L49">		Logging.warn(</span>
-				&quot;Default language was not set! The language {} could not be found. Please make surre that the correct localization file exists.&quot;,
-<span class="nc" id="L51">				language.getLanguage());</span>
+<span class="fc" id="L58">		Logging.warn(</span>
+				&quot;Default language was not set! The language {} could not be found. Please make sure that the correct localization file exists.&quot;,
+<span class="fc" id="L60">				language.getLanguage());</span>
 
-<span class="nc" id="L53">	}</span>
+<span class="fc" id="L62">	}</span>
 
 	/**
 	 * Get a message by a given key
@@ -59,10 +68,7 @@ class I18n {
 	 * @return the message corresponding to the key
 	 */
 	static String getMessage(String key) {
-<span class="pc bpc" id="L62" title="1 of 2 branches missed.">		if (bundle == null) {</span>
-<span class="nc" id="L63">			setLanguage(defaultLocale);</span>
-		}
-<span class="fc" id="L65">		return bundle.getString(key);</span>
+<span class="fc" id="L71">		return bundle.getString(key);</span>
 	}
 
 	/**
@@ -73,7 +79,7 @@ class I18n {
 	 * @return the message corresponding to the key and arguments
 	 */
 	static String getMessage(String key, Object... arguments) {
-<span class="fc" id="L76">		return MessageFormat.format(bundle.getString(key), arguments);</span>
+<span class="fc" id="L82">		return MessageFormat.format(bundle.getString(key), arguments);</span>
 	}
 
 }

@@ -755,14 +755,29 @@ public class ConversationsEngine {
 <span class="pc bpc" id="L755" title="1 of 4 branches missed.">			if (possibleRequest != null &amp;&amp; !possibleRequest.isEmpty()) {</span>
 <span class="fc" id="L756">				UserOutput.addOutputMessages(possibleRequest);</span>
 			}
-		} else {
-			// TODO: what happens when no skill is running? Ask all skills for an example
-			// request?
+<span class="fc" id="L758">		} else {</span>
+			// Get all possible requests from all skills
+<span class="fc" id="L760">			List&lt;String&gt; allPossibleRequests = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L761">			List&lt;String&gt; selectedPossibleRequests = new ArrayList&lt;&gt;();</span>
+<span class="fc bfc" id="L762" title="All 2 branches covered.">			for (SkillStateMachine skill : this.allSkillStateMachines) {</span>
+<span class="fc" id="L763">				allPossibleRequests.addAll(skill.getExampleRequests(I18n.getLanguage()));</span>
+<span class="fc" id="L764">			}</span>
+			// Select 3 possible requests
+<span class="fc" id="L766">			Collections.shuffle(allPossibleRequests);</span>
+<span class="fc bfc" id="L767" title="All 2 branches covered.">			for (String possibleRequest : allPossibleRequests) {</span>
+<span class="fc" id="L768">				selectedPossibleRequests.add(possibleRequest);</span>
+<span class="fc bfc" id="L769" title="All 2 branches covered.">				if (selectedPossibleRequests.size() == 3) {</span>
+<span class="fc" id="L770">					break;</span>
+				}
+<span class="fc" id="L772">			}</span>
+<span class="fc" id="L773">			UserOutput.addOutputMessageFromLocalizationKey(&quot;PossibleInputs&quot;);</span>
+<span class="fc" id="L774">			UserOutput.addOutputMessages(selectedPossibleRequests);</span>
+
 		}
-<span class="fc bfc" id="L762" title="All 2 branches covered.">		if (this.wasLastQuestionSkillQuestion) {</span>
-<span class="fc" id="L763">			this.askNextQuestion();</span>
+<span class="fc bfc" id="L777" title="All 2 branches covered.">		if (this.wasLastQuestionSkillQuestion) {</span>
+<span class="fc" id="L778">			this.askNextQuestion();</span>
 		}
-<span class="fc" id="L765">	}</span>
+<span class="fc" id="L780">	}</span>
 
 }
 </pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

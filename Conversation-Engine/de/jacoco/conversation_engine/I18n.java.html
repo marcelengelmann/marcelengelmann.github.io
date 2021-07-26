@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="de"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>I18n.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">conversation-engine</a> &gt; <a href="index.source.html" class="el_package">conversation_engine</a> &gt; <span class="el_source">I18n.java</span></div><h1>I18n.java</h1><pre class="source lang-java linenums">package conversation_engine;
+
+import java.text.MessageFormat;
+import java.util.Locale;
+import java.util.ResourceBundle;
+
+/**
+ * Utility class for handling the localization
+ * 
+ * @author Marcel Engelmann
+ *
+ */
+class I18n {
+
+	private static ResourceBundle bundle;
+	private static Locale defaultLocale;
+
+<span class="fc" id="L18">	private I18n() throws IllegalStateException {</span>
+<span class="fc" id="L19">		throw new IllegalStateException(&quot;Utility class&quot;);</span>
+	}
+
+	/**
+	 * Sets the localization language to the given locale if possible. Otherwise
+	 * uses the default language
+	 * 
+	 * @param language the new language
+	 */
+	static void setLanguage(Locale language) {
+<span class="fc" id="L29">		bundle = ResourceBundle.getBundle(&quot;localization.localization&quot;, language);</span>
+<span class="fc bfc" id="L30" title="All 2 branches covered.">		if (!bundle.getLocale().getDisplayName().equals(language.getDisplayName())) {</span>
+<span class="fc" id="L31">			Logging.error(&quot;The language {} is not supported.&quot;, language.toLanguageTag());</span>
+<span class="fc" id="L32">			bundle = ResourceBundle.getBundle(&quot;localization.localization&quot;, defaultLocale);</span>
+		}
+<span class="fc" id="L34">	}</span>
+
+	/**
+	 * Returns the currently used language locale
+	 * 
+	 * @return the currently used language locale
+	 */
+	static Locale getLanguage() {
+<span class="fc" id="L42">		return bundle.getLocale();</span>
+	}
+
+	/**
+	 * Sets the default language for the {@link ConversationEngine}.
+	 * 
+	 * @param language the language locale to use as default
+	 */
+	static void setDefaultLanguage(Locale language) {
+		// Check weather the locale exists or not
+<span class="fc" id="L52">		if (ResourceBundle.getBundle(&quot;localization.localization&quot;, language).getLocale().getLanguage()</span>
+<span class="fc bfc" id="L53" title="All 2 branches covered.">				.equals(language.getLanguage())) {</span>
+<span class="fc" id="L54">			defaultLocale = language;</span>
+<span class="fc" id="L55">			setLanguage(defaultLocale);</span>
+<span class="fc" id="L56">			return;</span>
+		}
+<span class="fc" id="L58">		Logging.warn(</span>
+				&quot;Default language was not set! The language {} could not be found. Please make sure that the correct localization file exists.&quot;,
+<span class="fc" id="L60">				language.getLanguage());</span>
+
+<span class="fc" id="L62">	}</span>
+
+	/**
+	 * Get a message by a given key
+	 * 
+	 * @param key the key to the message
+	 * @return the message corresponding to the key
+	 */
+	static String getMessage(String key) {
+<span class="fc" id="L71">		return bundle.getString(key);</span>
+	}
+
+	/**
+	 * Get a message by a given key and arguments
+	 * 
+	 * @param key       the key to the message
+	 * @param arguments the arguments for the message
+	 * @return the message corresponding to the key and arguments
+	 */
+	static String getMessage(String key, Object... arguments) {
+<span class="fc" id="L82">		return MessageFormat.format(bundle.getString(key), arguments);</span>
+	}
+
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.7.202105040129</span></div></body></html>

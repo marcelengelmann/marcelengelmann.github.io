@@ -48,7 +48,7 @@ class I18n {
 	 * @param language the language locale to use as default
 	 */
 	static void setDefaultLanguage(Locale language) {
-		// Check weather the locale exists or not
+		// Check whether the locale exists or not
 <span class="fc" id="L52">		if (ResourceBundle.getBundle(&quot;localization.localization&quot;, language).getLocale().getLanguage()</span>
 <span class="fc bfc" id="L53" title="All 2 branches covered.">				.equals(language.getLanguage())) {</span>
 <span class="fc" id="L54">			defaultLocale = language;</span>

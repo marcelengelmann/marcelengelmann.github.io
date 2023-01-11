@@ -1,0 +1,33 @@
+<div id="Kontakt" class="shadow">
+    <form id="contactForm" action="https://formspree.io/xnqggald" target="_blank" method="POST">
+        <div>
+            <!--Contact Data-->
+            <h2 class="languageText langId-contact_data"></h2>
+
+            <label for="contactName">Name:*</label><br>
+            <input id="contactName" name="username" type="text" placeholder="Name" required />
+            <br>
+            <label for="contactEmail">E-Mail:</label><br>
+            <input id="contactEmail" name="email" type="email" placeholder="E-Mail" />
+        </div>
+        <br>
+        <div>
+            <!-- Reason -->
+            <label for="topic" class="languageText langId-contact_topic"></label><br>
+            <select id="contactReason" name="topic" required>
+                <option value class="languageText langId-contact_select_placeholder"></option>
+                <option value="errorReport" class="languageText langId-contact_select_errorReport"></option>
+                <option value="newFeature" class="languageText langId-contact_select_newFeature"></option>
+            </select>
+        </div>
+        <br>
+        <div>
+            <label for="contactMessage" class="languageText langId-contact_message"></label><br>
+            <textarea id="contactMessage" cols="60" rows="6" minlength="5" required name="message"></textarea>
+        </div>
+    </form>
+    <button id="contactCancel" class="glow-on-hover languageText langId-contact_cancel"></button>
+    <button id="contactSubmit" class="glow-on-hover languageText langId-contact_submit"></button>
+    <br>
+    <span class="languageText langId-required_fields"></span>
+</div>

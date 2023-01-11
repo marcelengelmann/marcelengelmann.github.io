@@ -1,0 +1,12 @@
+#Installation, #installationPreCompiled, #installationSelfCompiled {
+    overflow: hidden;
+    background-color: #2CBCFB;
+    color: white;
+    padding: 2%;
+    border-radius: 25px;
+    margin-bottom: 2%;
+}
+
+#Installation a {
+    color: blue;
+}

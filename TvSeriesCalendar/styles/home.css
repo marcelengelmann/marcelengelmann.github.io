@@ -1,0 +1,151 @@
+/* Allgemeine Einstellungen für den Home Bereich */
+#Home {
+    width: 100%;
+    height: auto;
+    overflow: hidden;
+    color: white;
+}
+
+/* Wrapper für den Kontent des Homebereichs */
+.contentWrapper {
+    overflow: hidden;
+    width: calc(100% - 50px);
+    float: left;
+}
+
+#welcome_home, .feature {
+    position: relative;
+    height: auto;
+    width: 95%;
+    display: block;
+    overflow: auto;
+    border-radius: 25px;
+    padding: 2%;
+    background-color: #2CBCFB;
+    /*background-image: linear-gradient(#2CBCFB, #5fb8ff);*/
+}
+
+.textwrapper {
+    width: 50%;
+    float: left;
+}
+
+/* Bild im Home-Bereich */
+#home_pic_1 {
+    max-width: 100%;
+    height: auto;
+    display: block;
+    margin-left: 10%;
+    max-height: 350px;
+    margin: auto;
+}
+/* Anpassung von Header-Elementen im Home Bereich */
+#Home h1, #Home h2 {
+    margin: 0;
+    padding: 0;
+}
+
+/* Anpassungen der Features */
+.feature {
+    margin: 2% 0;
+}
+
+#feature-wrapper {
+    width: 100%;
+}
+
+/* Allgemeine Einstellunge für die Horizontale NavBar */
+#featureNav{
+    width: 50px;
+    position: fixed;
+    right: 1%;
+    background-color: transparent;
+    text-align: center;
+    padding: 0 0;
+    margin: 0;
+}
+
+#featureNav  a {
+    color: #808080;
+    padding: 7px;
+    text-decoration: none;
+    font-size: x-large;
+    display: block;
+    transition: all 0.3s ease;
+    border-radius: 100%;
+    border: solid #808080 1px;
+    margin-bottom: 10%;
+}
+
+#featureNav a:hover {
+    background-color: #75d2fa;
+    color: white;
+}
+#featureNav a:active {
+    background-color: #2CBCFB;
+    color: white;
+}
+
+#featureNav img {
+    width:28px;
+    height: 22px;
+}
+.subfeature {
+    width: 100%;
+    overflow: auto;
+}
+.subfeature-text {
+    width: 50%;
+    float: left;
+}
+
+.subfeature-img {
+    overflow:auto;
+    width: 50%;
+    display: flex;
+}
+
+.subfeature-img img{
+    max-width: 100%;
+    height: auto;
+    max-height: 300px;
+    float: left;
+    margin: 2% auto;
+}
+
+.feature {
+    overflow: auto;
+}
+.subfeature-img-mobile {
+    display: none;
+}
+
+@media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    #home_pic_1 {
+        display: none;
+    }
+    #featureNav {
+        display: none;
+    }
+    .contentWrapper {
+        width: 100%;
+    }
+    .textwrapper {
+        width: 100%;
+    }
+    .subfeature-text {
+        width: 100%;
+    }
+    .subfeature-img {
+        display: none;
+    }
+    .subfeature-img-mobile img{
+        width: 100%;
+        height: auto;
+    }
+    .subfeature-img-mobile {
+        margin-top: 5%;
+        display: block;
+    }
+}

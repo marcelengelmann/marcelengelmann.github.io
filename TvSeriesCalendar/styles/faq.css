@@ -1,0 +1,17 @@
+.question {
+    overflow: hidden;
+    background-color: #2CBCFB;
+    color: white;
+    padding: 2%;
+    border-radius: 25px;
+    margin-bottom: 2%;
+}
+
+#FAQ h2, #FAQ h4 {
+    margin: 0;
+    padding: 0,
+}
+
+#FAQ h4 {
+    font-style: italic;
+}

@@ -1,0 +1,41 @@
+/* Wrapper für den Kontent des Impressums */
+#impressumText {
+    width: 50%;
+    float: left;
+}
+iframe {
+    float: left;
+}
+#Impressum img {
+    height:15px;
+    width: 15px;
+}
+
+#Impressum {
+    overflow: hidden;
+    background-color: #2CBCFB;
+    color: white;
+    padding: 2%;
+    border-radius: 25px;
+}
+
+.iframediv {
+    overflow: hidden;
+    width:40%;
+    margin: auto;
+}
+
+h1 {
+    margin: 0;
+    padding: 0;
+}
+
+@media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    #impressumText {
+        width: 100%;
+    }
+    .iframediv {
+        width: 100%;
+    }
+}

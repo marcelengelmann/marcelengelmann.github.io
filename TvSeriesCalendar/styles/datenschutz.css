@@ -1,0 +1,7 @@
+#datenschutzWrapper {
+    overflow: hidden;
+    background-color: #2CBCFB;
+    color: white;
+    padding: 2%;
+    border-radius: 25px;
+}

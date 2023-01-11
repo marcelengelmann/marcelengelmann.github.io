@@ -1,0 +1,47 @@
+#DownloadsTable {
+    margin: auto;
+}
+#Downloads {
+    overflow: hidden;
+    background-color: transparent;
+    color: white;
+    padding: 2%;
+    border-radius: 25px;
+    margin-bottom: 2%;
+}
+
+#DownloadsTable caption {
+    font-size: xx-large;
+    font-weight: bold;
+}
+
+#DownloadsTable td,
+#DownloadsTable th {
+    text-align: center;
+    padding: 15px;
+}
+
+#DownloadsTable {
+    border: 1px solid transparent;
+    border-radius: 25px;
+    background: #2CBCFB;
+}
+
+#DownloadsTable td, #DownloadsTable th{
+    border-bottom: 1px solid white;
+}
+
+table {
+    border-collapse: collapse;
+}
+
+#DownloadsTable tr:last-child > td {
+    border-bottom: 0;
+}
+
+@media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    #Downloads {
+        overflow: scroll;
+    }
+}

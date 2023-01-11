@@ -1,0 +1,248 @@
+/* 
+Color definitions:
+
+Main Color(Blue): #2CBCFB
+*/
+
+/* Allgemeine Einstellungen über die gesamte Webseite */
+body {
+    position: relative;
+    min-height: 100vh;
+    min-width: 400px;
+    margin: 0px;
+    padding: 0px;
+    /*background-image: url(../images/Background_blue_rep.png);
+    background-size: cover;*/
+    background-color: whitesmoke;
+    color: black;
+    font-family: 'Open Sans', Arial, Helvetica, sans-serif;
+}
+
+/* Einstellungen für die HeaderBar */
+#HeaderBar {
+    width: 100%;
+    height: 85px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0px;
+    padding: 0px;
+}
+
+#HeaderInnerContainer:hover {
+    cursor: pointer;
+}
+
+#HeaderBar>div {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#HeaderBar>div>img {
+    height: 85px;
+    width: auto;
+}
+
+#HeaderTitle {
+    margin: auto auto;
+    text-align: center;
+    color: black;
+    font-size: 65px;
+}
+
+#githublink {
+    position: absolute;
+    height: 85px;
+    margin-top: 7.5px;
+    right: 2%;
+}
+
+#githublogo {
+    width: 70px;
+    height: 70px;
+}
+
+/* Einstellungen für die Navigationsleiste */
+#NavBar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    height: 40px;
+    background-color: whitesmoke;
+    border-top: 1px solid grey;
+    border-bottom: 1px solid grey;
+    color: grey;
+}
+
+#NavBar a {
+    text-decoration: none;
+    color: inherit;
+    font-weight: 900;
+}
+
+#NavLinks a {
+    margin: auto 0;
+}
+
+/* Einstellungen für den Footer */
+#Footer {
+    position: absolute;
+    bottom: 0px;
+    width: 100%;
+    height: 50px;
+    margin: 0px;
+    background-color: whitesmoke;
+    border-top: 1px solid grey;
+    color: grey;
+}
+
+#FooterContainer {
+    height: 100%;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+#Footer a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.active {
+    color: #2CBCFB !important;
+}
+
+/* Copyright Logo für Bilder, falls benötigt */
+.cpyright {
+    position: absolute;
+    bottom: 5px;
+    right: 0px;
+    font-size: x-small;
+    color: white;
+}
+
+.img_cpyright {
+    position: relative;
+    overflow: auto;
+}
+
+/* Einstellungen für den Sprachselektor */
+#langButton {
+    width: 60px;
+    height: 32px;
+    background-image: url("../images/en_Flag.png");
+    background-size: 100%;
+    border: 0px;
+}
+
+#langButton:hover {
+    cursor: pointer;
+}
+
+#langButton:active {
+    border: 0px;
+}
+
+a:hover {
+    cursor: pointer;
+}
+
+/* Header fonts */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: 'Roboto', 'Open Sans', sans-serif;
+}
+
+/* Abstand Main zu Kontent*/
+#Main {
+    margin: 2% 5% 0% 5%;
+    padding-bottom: 50px;
+}
+
+/* Schlagschatten für 3D Effekt */
+.shadow {
+    box-shadow: 10px 10px 5px silver;
+}
+
+@media only screen and (min-width: 769px) {
+    #collapseNav {
+        display: none !important;
+    }
+    #NavBar {
+        display: flex !important;
+    }
+    #gitNav {
+        display: none;
+    }
+}
+@media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    #HeaderTitle {
+        font-size: 100%;
+    }
+
+    #HeaderBar {
+        height: 40px;
+    }
+    #HeaderBar img {
+        height: 40px !important;
+    }
+    #githublink {
+        display: none;
+    }
+    #gitNav {
+        display: block;
+    }
+    #NavBar {
+        overflow: hidden;
+        background-color: #2CBCFB !important;
+        position: relative;
+        display: none;
+        height: auto;
+    }
+
+    #mobileNav {
+        width:35px;
+        height: 31px;
+        padding: 4px 12px 0 12px;
+    }
+
+    #NavBar a {
+        color: white;
+        padding: 8px 16px;
+        text-decoration: none;
+        font-size: 18px;
+        display: block;
+    }
+    
+    .active {
+        color: white !important;
+        background-color: #1578a3;
+    }
+      
+    #collapseNav {
+        display: block;
+        background: #2CBCFB;
+        position: absolute;
+        left: 0;
+        top: 0;
+    }
+      
+    #collapseNav:hover, #NavBar a:hover {
+        background-color: #ddd;
+        color: black;
+    }
+    #langButton {
+        margin: 8px 0 8px 16px;
+    }
+
+    .subNav {
+        border-bottom: 1px solid white;
+        
+    }
+}

@@ -1,0 +1,70 @@
+#plannedFeaturesHeadline {
+    text-align: center;
+}
+
+#issuesContainer {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.issueElement {
+    overflow: hidden;
+    background-color: #2CBCFB;
+    color: white;
+    border-radius: 25px;
+    padding: 0 2% 2% 2%;
+    width: 40%;
+    margin: 2%;
+    box-shadow: 10px 10px 5px silver;
+}
+
+.issueHeader {
+    font-weight: bold;
+    border-bottom: 1px solid whitesmoke;
+    padding-bottom: 2%;
+    text-align: center;
+}
+
+.issueDescription {
+    margin: 2% 0;
+    padding-bottom: 5%;
+    border-bottom: 1px solid whitesmoke;
+}
+
+.issueComments {
+    width: 100%;
+    height: 20%;
+    margin: 2% 0;
+}
+
+.user {
+    text-align: left;
+}
+
+.user>img {
+    width: 17px;
+    height: 17px;
+    margin-right: 1%;
+}
+
+.user>span {}
+
+.comment {
+    margin-bottom: 3%;
+    text-align: left;
+    font-style: italic;
+}
+
+.commentWrapper {
+    padding: 2%;
+    border: 1px solid white;
+    border-radius: 25px;
+    margin-bottom: 2%;
+}
+
+@media only screen and (max-width: 768px) {
+    /* For mobile phones: */
+    .issueElement {
+        width: 100%;
+    }
+}

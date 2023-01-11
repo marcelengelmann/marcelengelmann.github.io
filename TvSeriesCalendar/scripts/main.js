@@ -47,7 +47,7 @@ function changeMainDiv(source) {
             currentSubpageScript = downloadsScript;
             changeActiveNav(1);
             break;
-            case 'NavInstallation':
+        case 'NavInstallation':
             nextContent = "installation.html";
             currentSubpageScript = installationScript;
             changeActiveNav(2);
@@ -87,7 +87,7 @@ function changeMainDiv(source) {
 function changeActiveNav(index) {
     try {
         document.getElementById("NavBar").getElementsByClassName("active")[0].classList.remove('active');
-    } catch (_) {} finally {
+    } catch (_) { } finally {
         if (index != -1) document.getElementById("NavBar").getElementsByTagName("a")[index].classList.add("active");
     }
 }
@@ -97,14 +97,14 @@ function changeActiveNav(index) {
 function changeContent(target) {
     let request = new XMLHttpRequest();
 
-    request.open('GET', `/contentpages/${target}`, true);
+    request.open('GET', `contentpages/${target}`, true);
 
-    request.onload = function() {
+    request.onload = function () {
         if (request.status >= 200 && request.status < 400) {
             let response = request.responseText;
             document.getElementById("Main").innerHTML = response;
             languageScript.reloadLanguage();
-            if(currentSubpageScript != null)
+            if (currentSubpageScript != null)
                 currentSubpageScript.startUp();
         }
     };
@@ -124,8 +124,8 @@ function resetcurrentSubpageScript() {
 function showNavigationDropdownMenu() {
     var x = document.getElementById("NavBar");
     if (x.style.display === "block") {
-      x.style.display = "none";
+        x.style.display = "none";
     } else {
-      x.style.display = "block";
+        x.style.display = "block";
     }
 }
